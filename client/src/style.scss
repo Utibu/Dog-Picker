@@ -1,0 +1,76 @@
+* {
+    box-sizing: border-box;
+}
+
+main {
+    display: flex;
+}
+
+article {
+    width: 70%;
+}
+
+aside {
+    width: 30%;
+    padding-top: 100px;
+}
+
+.dogs {
+    display: flex;
+    flex-wrap: wrap;
+    width: 60%;
+    margin: 0 auto;
+    overflow: hidden;
+
+    .dogContainer {
+        flex: 0 0 50%;
+        position: relative;
+        padding-top: 50%;
+        height: 0;
+        overflow: hidden;
+
+        img {
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            position: absolute;
+            object-fit: cover;
+        }
+    }
+
+    .info {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+    }
+
+    .like {
+        font-size: 100px;
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
+    }
+
+    .hoverIcon {
+        display: none;
+        
+    }
+
+    .hoverable {
+        &:hover img {
+            filter: blur(3px);
+            overflow: hidden;
+            transform: scale(1.03);
+        }
+
+        &:hover .hoverIcon {
+            display: block;
+            font-size: 24px;
+            margin: 0 10px 10px 0;
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+        }
+    }
+}
