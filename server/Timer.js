@@ -8,24 +8,23 @@ class Timer {
         console.log("RUNNING!")
     }
     /**
-     * 
+     * Starting (restarting if already set) a timer that performs a callback when finished. 
+     * Also setting values to keep track of the progress of the timer.
      * @param {number} duration the duration in seconds.
      * @param {function} callback the function to call after timer is done.
      */
     startTimer(duration, callback) {
         if(this.timer !== null) {
-            clearTimeout(this.timer)
-            this.timer = null
+            this.stopTimer()
         }
 
         this.timer = setTimeout(() => {
-            clearTimeout(this.timer)
-            this.timer = null
+            this.stopTimer()
             if(callback !== null) callback()
         }, duration * 1000)
         const currentDate = new Date()
         this.startTime = currentDate.getTime() / 1000
-        console.log("STARTING TIMER: ", this.startTime)
+        console.log("STARTING TIMER!")
         this.duration = duration
     }
 

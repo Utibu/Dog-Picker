@@ -73,7 +73,7 @@ function Voting({location}) {
     return (
         <main>
             <article>
-                <h1>Vote!</h1>
+                <h1>Vote on your favourite dog!</h1>
                 <VoteArea 
                     dogs={newDogs}
                     vote={vote}

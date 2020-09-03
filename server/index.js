@@ -1,15 +1,15 @@
 import express from "express"
 import http from "http"
 import socketio from "socket.io"
-import axios from "axios"
 
 const PORT = process.env.PORT || 5000
 const ROUNDLENGTH = 90
 
 import router from "./router/router.js"
-import {createUser, getUser, removeUser, registerVote, getUsersThatHasntVoted, getUsers, resetVotes } from "./users.js"
+import {createUser, getUser, removeUser, registerVote, getUsersThatHasntVoted, getUsers, resetVotes, getVotesPerDog } from "./users.js"
 import { setCurrentDogs, getCurrentDogs, setLastWonDog, getLastWonDog } from "./dogs.js"
 import Timer from "./Timer.js"
+import { getPhotos } from "./services/photos.js"
 
 const app = express()
 const server = http.createServer(app)
@@ -21,80 +21,74 @@ const defaultRoom = "default"
 let timer = new Timer()
 let photos
 
-
+//Handle the IO
 io.on("connection", (socket) => {
     console.log("User has arrived!")
     socket.on("join", (name) => {
 
+        //First user has joined connected, start the timer
         if(getUsers().length === 0) {
-            startTimer()
+            newRound()
         }
 
         createUser(socket.id, name)
-
         socket.join(defaultRoom)
-        io.to(defaultRoom).emit("newdogs", { payload: getCurrentDogs() })
-        //sendPhotos()
 
-        const votes = getVotesPerDog("")
-        io.to(defaultRoom).emit("voteCasted", votes)
-        console.log("NEW USER: ", timer)
-        socket.emit("newUser", { 
-            lastWonDog: getLastWonDog(),
-            timeLeft: timer.getTimeLeftMilliseconds()
-         })
-        sendUsers()
+        emitOnNewUser(socket)
+        
     })
-    
 
     socket.on("vote", (dogID, callback) => {
         registerVote(socket.id, dogID)
         console.log("VOTE REGISTERED!")
-        const votes = getVotesPerDog(socket.id)
-        io.to(defaultRoom).emit("voteCasted", votes)
-        sendUsers()
-        if(timer.getTimeLeft() !== -1) {
-            checkFinishedVoting()
-            callback()
-        }
-
+        emitVotes(socket)
+        if(callback !== null) callback()
     })
 
     socket.on("disconnect", () => {
         console.log("User has left!")
         removeUser(socket.id)
-        sendUsers()
+        emitUsers()
+
+        //All users has left, no need for the timer to still be operating.
         if(getUsers().length === 0) timer.stopTimer()
-        console.log(getUsers())
-        console.log(getLastWonDog())
     })
 })
 
-function startTimer() {
-    sendPhotos()
+function emitVotes(socket) {
+    const votes = getVotesPerDog(socket.id)
+    io.to(defaultRoom).emit("voteCasted", votes)
+    emitUsers()
+    if(timer.getTimeLeft() !== -1) {
+        checkFinishedVoting()
+        //callback()
+    }
 }
 
-function sendUsers() {
-    io.to(defaultRoom).emit("usersUpdated", getUsers())
+function emitOnNewUser(socket) {
+    io.to(defaultRoom).emit("newdogs", { payload: getCurrentDogs() })
+
+    const votes = getVotesPerDog("")
+    io.to(defaultRoom).emit("voteCasted", votes)
+
+    socket.emit("newUser", { 
+        lastWonDog: getLastWonDog(),
+        timeLeft: timer.getTimeLeftMilliseconds()
+    })
+    
+    emitUsers()
 }
 
-setDogPhotoTimer()
-function setDogPhotoTimer() {
-    setInterval(() => {
-        //io.to(defaultRoom).emit("hello", { payload: "hello" })
-    }, 5000)
-}
-
-function sendPhotos() {
+function newRound() {
     getPhotos()
         .then(data => {
-            //console.log(data)
-            console.log("SEND PHOTOS!!")
+            console.log("Sending photos!")
             
             timer.startTimer(ROUNDLENGTH, () => {
                 console.log("Timer finished!")
                 onFinishedVoting()
             })
+
             timer.synchronize((timeLeft) => {
                 console.log("SYNCING IS HAPPENING!!")
                 io.to(defaultRoom).emit("timerUpdated", timeLeft)
@@ -107,33 +101,8 @@ function sendPhotos() {
         .catch(err => console.log(err))
 }
 
-function getPhotos() {
-    //Just temporary while testing! Remember to remove before launch.
-    return getDynamicPhotos()
-    //return getStaticPhotos()
-    
-}
-
-function getDynamicPhotos() {
-    return axios.get("https://dog.ceo/api/breeds/image/random/4").
-        then(response => {
-            console.log(response.data)
-            return response.data
-        })
-}
-
-function getStaticPhotos() {
-    return new Promise((resolution, reject) => {
-        resolution({
-            message: [
-              'https://images.dog.ceo/breeds/bulldog-french/n02108915_8425.jpg',
-              'https://images.dog.ceo/breeds/terrier-australian/n02096294_7000.jpg',
-              'https://images.dog.ceo/breeds/bouvier/n02106382_3437.jpg',
-              'https://images.dog.ceo/breeds/bouvier/n02106382_4504.jpg'
-            ],
-            status: 'success'
-          })
-    })
+function emitUsers() {
+    io.to(defaultRoom).emit("usersUpdated", getUsers())
 }
 
 function checkFinishedVoting() {
@@ -165,24 +134,10 @@ function handleVoteReset() {
     setTimeout(() => {
         io.to(defaultRoom).emit("reset")
         resetVotes()
-        sendUsers()
+        emitUsers()
         //sendPhotos()
-        startTimer()
+        newRound()
     }, 5000)
-}
-
-function getVotesPerDog() {
-    const users = getUsers()
-    let allVotes = {}
-
-    users.forEach((user) => {
-        if(user.votedOn > -1) {
-            const currentValue = allVotes[user.votedOn] == null ? 0 : allVotes[user.votedOn]
-            allVotes[user.votedOn] = currentValue + 1
-        }
-    })
-    console.log("VOTES: ", allVotes)
-    return allVotes
 }
 
 

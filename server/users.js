@@ -40,10 +40,23 @@ function getUsers() {
     return users
 }
 
+function getVotesPerDog() {
+    let allVotes = {}
+
+    users.forEach((user) => {
+        if(user.votedOn > -1) {
+            const currentValue = allVotes[user.votedOn] == null ? 0 : allVotes[user.votedOn]
+            allVotes[user.votedOn] = currentValue + 1
+        }
+    })
+    
+    return allVotes
+}
+
 function resetVotes() {
     users.forEach(user => {
         user.votedOn = -1
     })
 }
 
-export {createUser, getUser, removeUser, registerVote, getUsersThatHasntVoted, getUsers, resetVotes }
+export {createUser, getUser, removeUser, registerVote, getUsersThatHasntVoted, getUsers, resetVotes, getVotesPerDog }
