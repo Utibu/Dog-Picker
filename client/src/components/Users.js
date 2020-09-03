@@ -13,7 +13,7 @@ function Users(props) {
     }, [])
 
     const userElements = users.map(users => {
-        return <li>{users.name} - has voted: {users.votedOn === -1 ? "No" : "Yes"}</li>
+        return <li>{users.votedOn === -1 ? "" : `❤️`} {users.name}</li>
     })
     
     return (

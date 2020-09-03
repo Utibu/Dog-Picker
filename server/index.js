@@ -4,7 +4,7 @@ import socketio from "socket.io"
 import axios from "axios"
 
 const PORT = process.env.PORT || 5000
-const ROUNDLENGTH = 10
+const ROUNDLENGTH = 90
 
 import router from "./router/router.js"
 import {createUser, getUser, removeUser, registerVote, getUsersThatHasntVoted, getUsers, resetVotes } from "./users.js"
@@ -109,6 +109,20 @@ function sendPhotos() {
 
 function getPhotos() {
     //Just temporary while testing! Remember to remove before launch.
+    return getDynamicPhotos()
+    //return getStaticPhotos()
+    
+}
+
+function getDynamicPhotos() {
+    return axios.get("https://dog.ceo/api/breeds/image/random/4").
+        then(response => {
+            console.log(response.data)
+            return response.data
+        })
+}
+
+function getStaticPhotos() {
     return new Promise((resolution, reject) => {
         resolution({
             message: [
@@ -120,11 +134,6 @@ function getPhotos() {
             status: 'success'
           })
     })
-    return axios.get("https://dog.ceo/api/breeds/image/random/4").
-        then(response => {
-            console.log(response.data)
-            return response.data
-        })
 }
 
 function checkFinishedVoting() {
